@@ -48,7 +48,7 @@ router.get('/:propertyId/units', requireAuth,
 
 // POST /:propertyId/units - Create unit
 router.post('/:propertyId/units', requireAuth,
-  requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF),
+  requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF, UserRole.OWNER),
   validateBody(createUnitSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -84,7 +84,7 @@ router.get('/units/:unitId', requireAuth,
 
 // PUT /units/:unitId - Update unit
 router.put('/units/:unitId', requireAuth,
-  requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF),
+  requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF, UserRole.OWNER),
   validateBody(updateUnitSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {

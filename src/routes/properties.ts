@@ -44,7 +44,7 @@ router.get('/', requireAuth, requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF, 
 );
 
 // POST / - Create property
-router.post('/', requireAuth, requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF),
+router.post('/', requireAuth, requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF, UserRole.OWNER),
   validateBody(createPropertySchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -78,7 +78,7 @@ router.get('/:id', requireAuth, requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAF
 );
 
 // PUT /:id - Update property
-router.put('/:id', requireAuth, requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF),
+router.put('/:id', requireAuth, requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF, UserRole.OWNER),
   validateBody(updatePropertySchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
