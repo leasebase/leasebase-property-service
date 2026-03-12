@@ -22,7 +22,7 @@ const updateUnitSchema = createUnitSchema.partial();
 
 // GET /:propertyId/units - List units for property
 router.get('/:propertyId/units', requireAuth,
-  requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF, UserRole.OWNER),
+  requireRole(UserRole.OWNER),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = (req as AuthenticatedRequest).user;
@@ -48,7 +48,7 @@ router.get('/:propertyId/units', requireAuth,
 
 // POST /:propertyId/units - Create unit
 router.post('/:propertyId/units', requireAuth,
-  requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF, UserRole.OWNER),
+  requireRole(UserRole.OWNER),
   validateBody(createUnitSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -68,7 +68,7 @@ router.post('/:propertyId/units', requireAuth,
 
 // GET /units/:unitId - Get unit
 router.get('/units/:unitId', requireAuth,
-  requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF, UserRole.OWNER, UserRole.TENANT),
+  requireRole(UserRole.OWNER, UserRole.TENANT),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = (req as AuthenticatedRequest).user;
@@ -84,7 +84,7 @@ router.get('/units/:unitId', requireAuth,
 
 // PUT /units/:unitId - Update unit
 router.put('/units/:unitId', requireAuth,
-  requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF, UserRole.OWNER),
+  requireRole(UserRole.OWNER),
   validateBody(updateUnitSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -121,7 +121,7 @@ router.put('/units/:unitId', requireAuth,
 );
 
 // DELETE /units/:unitId
-router.delete('/units/:unitId', requireAuth, requireRole(UserRole.ORG_ADMIN),
+router.delete('/units/:unitId', requireAuth, requireRole(UserRole.OWNER),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = (req as AuthenticatedRequest).user;

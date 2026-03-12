@@ -22,7 +22,7 @@ const createPropertySchema = z.object({
 const updatePropertySchema = createPropertySchema.partial();
 
 // GET / - List properties
-router.get('/', requireAuth, requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF, UserRole.OWNER),
+router.get('/', requireAuth, requireRole(UserRole.OWNER),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = (req as AuthenticatedRequest).user;
@@ -44,7 +44,7 @@ router.get('/', requireAuth, requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF, 
 );
 
 // POST / - Create property
-router.post('/', requireAuth, requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF, UserRole.OWNER),
+router.post('/', requireAuth, requireRole(UserRole.OWNER),
   validateBody(createPropertySchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -63,7 +63,7 @@ router.post('/', requireAuth, requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF,
 );
 
 // GET /:id - Get property
-router.get('/:id', requireAuth, requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF, UserRole.OWNER),
+router.get('/:id', requireAuth, requireRole(UserRole.OWNER),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = (req as AuthenticatedRequest).user;
@@ -78,7 +78,7 @@ router.get('/:id', requireAuth, requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAF
 );
 
 // PUT /:id - Update property
-router.put('/:id', requireAuth, requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAFF, UserRole.OWNER),
+router.put('/:id', requireAuth, requireRole(UserRole.OWNER),
   validateBody(updatePropertySchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -115,7 +115,7 @@ router.put('/:id', requireAuth, requireRole(UserRole.ORG_ADMIN, UserRole.PM_STAF
 );
 
 // DELETE /:id
-router.delete('/:id', requireAuth, requireRole(UserRole.ORG_ADMIN),
+router.delete('/:id', requireAuth, requireRole(UserRole.OWNER),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = (req as AuthenticatedRequest).user;
