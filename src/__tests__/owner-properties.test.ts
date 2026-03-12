@@ -114,8 +114,8 @@ describe('Role guards', () => {
     });
   }
 
-  it('DELETE /properties/:id → 403 for OWNER (ORG_ADMIN only)', async () => {
-    activeUser.current = owner();
+  it('DELETE /properties/:id → 403 for TENANT (OWNER only)', async () => {
+    activeUser.current = owner({ role: 'TENANT' });
     const res = await req(port, 'DELETE', '/properties/prop-1');
     expect(res.status).toBe(403);
   });
