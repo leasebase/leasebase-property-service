@@ -243,6 +243,23 @@ describe('OWNER create unit', () => {
     expect(res.status).toBe(201);
   });
 
+  it('POST /:propertyId/units creates without rentAmount (defaults to 0)', async () => {
+    activeUser.current = owner();
+    mockQueryOne.mockResolvedValueOnce({
+      id: 'new-u4', organization_id: 'org-1', property_id: 'prop-1',
+      unit_number: '201', bedrooms: 1, bathrooms: 1, square_feet: null,
+      rent_amount: 0, status: 'AVAILABLE',
+    });
+
+    const res = await req(port, 'POST', '/properties/prop-1/units', {
+      unitNumber: '201', bedrooms: 1, bathrooms: 1,
+    });
+    expect(res.status).toBe(201);
+    // rentAmount should default to 0 in the INSERT
+    const args = mockQueryOne.mock.calls[0][1];
+    expect(args[6]).toBe(0); // rentAmount position in INSERT params
+  });
+
   it('POST /:propertyId/units rejects missing required fields', async () => {
     activeUser.current = owner();
     const res = await req(port, 'POST', '/properties/prop-1/units', { unitNumber: '101' });
