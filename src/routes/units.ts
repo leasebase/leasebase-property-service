@@ -14,7 +14,7 @@ const createUnitSchema = z.object({
   bedrooms: z.number().int().min(0),
   bathrooms: z.number().min(0),
   squareFeet: z.number().int().optional(),
-  rentAmount: z.number().int().min(0),
+  rentAmount: z.number().int().min(0).default(0),
   status: z.string().default('AVAILABLE'),
 });
 
