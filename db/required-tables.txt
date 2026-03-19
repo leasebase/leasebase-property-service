@@ -12,9 +12,3 @@ property_service.properties.organization_id
 # Units (property-service owns this table)
 property_service.units.id
 property_service.units.property_id
-
-# Manager–property assignments (property-service owns this table)
-property_service.manager_property_assignments.id
-property_service.manager_property_assignments.organization_id
-property_service.manager_property_assignments.user_id
-property_service.manager_property_assignments.property_id
