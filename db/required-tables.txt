@@ -1,0 +1,14 @@
+# property-service runtime-critical DB dependencies
+# Format: schema.table or schema.table.column
+# Used by the advisory schema drift checker during deploys.
+
+# Core identity (read via service-common requireAuth)
+public.User.id
+
+# Properties (property-service owns this table)
+property_service.properties.id
+property_service.properties.organization_id
+
+# Units (property-service owns this table)
+property_service.units.id
+property_service.units.property_id

@@ -15,7 +15,9 @@ const createUnitSchema = z.object({
   bathrooms: z.number().min(0),
   squareFeet: z.number().int().optional(),
   rentAmount: z.number().int().min(0).default(0),
-  status: z.string().default('AVAILABLE'),
+  // Default status is VACANT — reflects the preferred business vocabulary for
+  // an unoccupied unit (AVAILABLE was renamed to VACANT in migration 002).
+  status: z.string().default('VACANT'),
 });
 
 const updateUnitSchema = createUnitSchema.partial();
