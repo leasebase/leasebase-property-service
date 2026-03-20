@@ -2,10 +2,21 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import { z } from 'zod';
 import {
   requireAuth, requireRole, validateBody,
-  query, queryOne, NotFoundError,
+  query, queryOne, NotFoundError, AppError, logger,
   parsePagination, paginationMeta,
   type AuthenticatedRequest, UserRole,
 } from '@leasebase/service-common';
+
+// ── Internal service key validation ──────────────────────────────────────────
+function validateInternalKey(req: Request, res: Response): boolean {
+  const configuredKey = process.env.INTERNAL_SERVICE_KEY || '';
+  const key = req.headers['x-internal-service-key'];
+  if (!configuredKey || key !== configuredKey) {
+    res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Invalid or missing internal service key' } });
+    return false;
+  }
+  return true;
+}
 
 const router = Router();
 
@@ -135,6 +146,57 @@ router.delete('/units/:unitId', requireAuth, requireRole(UserRole.OWNER),
       res.status(204).send();
     } catch (err) { next(err); }
   }
+);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INTERNAL SERVICE-TO-SERVICE ENDPOINTS
+// Protected by X-Internal-Service-Key header (not by JWT auth).
+// Called by lease-service during lease activation.
+// ══════════════════════════════════════════════════════════════════════════════
+
+const occupancySyncSchema = z.object({
+  status: z.enum(['VACANT', 'OCCUPIED']),
+});
+
+/**
+ * POST /units/:unitId/occupancy-sync
+ *
+ * Internal-only endpoint to synchronize unit occupancy status.
+ * Called by lease-service after lease activation/deactivation.
+ *
+ * - Idempotent: setting the same status is a no-op (updates 0 rows, no error)
+ * - Protected by X-Internal-Service-Key header
+ */
+router.post('/units/:unitId/occupancy-sync',
+  async (req: Request, res: Response, next: NextFunction) => {
+    if (!validateInternalKey(req, res)) return;
+    try {
+      const { unitId } = req.params;
+
+      const parseResult = occupancySyncSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({
+          error: { code: 'VALIDATION_ERROR', message: parseResult.error.message },
+        });
+      }
+
+      const { status } = parseResult.data;
+
+      const row = await queryOne<{ id: string; status: string }>(
+        `UPDATE property_service.units
+         SET status = $1, updated_at = NOW()
+         WHERE id::text = $2
+         RETURNING id, status`,
+        [status, unitId],
+      );
+
+      if (!row) throw new NotFoundError('Unit not found');
+
+      logger.info({ unitId, status }, 'Unit occupancy synced');
+
+      res.json({ data: { unitId: row.id, status: row.status } });
+    } catch (err) { next(err); }
+  },
 );
 
 export { router as unitsRouter };
