@@ -211,7 +211,7 @@ describe('OWNER create unit', () => {
     mockQueryOne.mockResolvedValueOnce({
       id: 'new-u1', organization_id: 'org-1', property_id: 'prop-1',
       unit_number: '101', bedrooms: 2, bathrooms: 1.5, square_feet: 850,
-      rent_amount: 150000, status: 'AVAILABLE',
+      rent_amount: 150000, status: 'VACANT',
     });
 
     const res = await req(port, 'POST', '/properties/prop-1/units', validBody);
@@ -224,15 +224,16 @@ describe('OWNER create unit', () => {
     expect(args[1]).toBe('prop-1');
   });
 
-  it('POST /:propertyId/units defaults status to AVAILABLE', async () => {
+  it('POST /:propertyId/units defaults status to VACANT (not AVAILABLE)', async () => {
     activeUser.current = owner();
-    mockQueryOne.mockResolvedValueOnce({ id: 'new-u2', status: 'AVAILABLE' });
+    mockQueryOne.mockResolvedValueOnce({ id: 'new-u2', status: 'VACANT' });
 
     const res = await req(port, 'POST', '/properties/prop-1/units', validBody);
     expect(res.status).toBe(201);
-    // The default status is applied by zod schema
+    // The default status must be VACANT per business vocabulary normalization
     const args = mockQueryOne.mock.calls[0][1];
-    expect(args[args.length - 1]).toBe('AVAILABLE');
+    expect(args[args.length - 1]).toBe('VACANT');
+    expect(args[args.length - 1]).not.toBe('AVAILABLE');
   });
 
   it('POST /:propertyId/units with custom status', async () => {
@@ -248,7 +249,7 @@ describe('OWNER create unit', () => {
     mockQueryOne.mockResolvedValueOnce({
       id: 'new-u4', organization_id: 'org-1', property_id: 'prop-1',
       unit_number: '201', bedrooms: 1, bathrooms: 1, square_feet: null,
-      rent_amount: 0, status: 'AVAILABLE',
+      rent_amount: 0, status: 'VACANT',
     });
 
     const res = await req(port, 'POST', '/properties/prop-1/units', {
@@ -406,5 +407,71 @@ describe('Meta envelope', () => {
     const res = await req(port, 'GET', '/properties/prop-1/units?limit=3&page=1');
     expect(res.status).toBe(200);
     expect(res.body.meta).toMatchObject({ page: 1, limit: 3, total: 10, totalPages: 4 });
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   Unit status vocabulary normalization: AVAILABLE → VACANT
+   ═══════════════════════════════════════════════════════════════════ */
+
+describe('Unit status VACANT normalization', () => {
+  it('POST /:propertyId/units — Zod schema defaults to VACANT, not AVAILABLE', async () => {
+    // This test verifies the Zod default in units.ts is 'VACANT'
+    activeUser.current = owner();
+    mockQueryOne.mockResolvedValueOnce({ id: 'new-u', status: 'VACANT' });
+
+    await req(port, 'POST', '/properties/prop-1/units', {
+      unitNumber: '201', bedrooms: 2, bathrooms: 1, rentAmount: 100000,
+    });
+
+    // The last param in the INSERT is the status value passed by Zod default
+    const insertParams = mockQueryOne.mock.calls[0][1] as any[];
+    const statusParam = insertParams[insertParams.length - 1];
+    expect(statusParam).toBe('VACANT');
+    expect(statusParam).not.toBe('AVAILABLE');
+  });
+
+  it('OCCUPIED status is not affected by normalization', async () => {
+    activeUser.current = owner();
+    mockQueryOne.mockResolvedValueOnce({ id: 'new-u', status: 'OCCUPIED' });
+
+    const res = await req(port, 'POST', '/properties/prop-1/units', {
+      unitNumber: '301', bedrooms: 1, bathrooms: 1, rentAmount: 80000, status: 'OCCUPIED',
+    });
+    expect(res.status).toBe(201);
+
+    const insertParams = mockQueryOne.mock.calls[0][1] as any[];
+    expect(insertParams[insertParams.length - 1]).toBe('OCCUPIED');
+  });
+
+  it('MAINTENANCE and OFFLINE statuses are preserved', async () => {
+    activeUser.current = owner();
+    mockQueryOne.mockResolvedValueOnce({ id: 'new-u', status: 'MAINTENANCE' });
+
+    const res = await req(port, 'POST', '/properties/prop-1/units', {
+      unitNumber: '401', bedrooms: 1, bathrooms: 1, rentAmount: 0, status: 'MAINTENANCE',
+    });
+    expect(res.status).toBe(201);
+
+    const insertParams = mockQueryOne.mock.calls[0][1] as any[];
+    expect(insertParams[insertParams.length - 1]).toBe('MAINTENANCE');
+  });
+
+  it('PUT /units/:unitId can update to VACANT', async () => {
+    activeUser.current = owner();
+    mockQueryOne.mockResolvedValueOnce({ id: 'unit-1', status: 'VACANT' });
+
+    const res = await req(port, 'PUT', '/properties/units/unit-1', { status: 'VACANT' });
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe('VACANT');
+  });
+
+  it('PUT /units/:unitId can update to OCCUPIED (e.g. manual override)', async () => {
+    activeUser.current = owner();
+    mockQueryOne.mockResolvedValueOnce({ id: 'unit-1', status: 'OCCUPIED' });
+
+    const res = await req(port, 'PUT', '/properties/units/unit-1', { status: 'OCCUPIED' });
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe('OCCUPIED');
   });
 });
